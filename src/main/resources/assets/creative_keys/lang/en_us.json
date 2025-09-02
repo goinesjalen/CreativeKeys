@@ -1,0 +1,11 @@
+{
+  "itemGroup.creative_keys": "Creative Keys",
+  "item.creative_keys.creative_key": "Creative Key",
+  "item.creative_keys.creative_key.desc": "A prop key item for creative use.",
+
+  "creative_keys.configuration.title": "Creative Keys Config",
+  "creative_keys.configuration.enableCreativeKey": "Enable Creative Key",
+  "creative_keys.configuration.keyTags": "Key Tags"
+}
+
+
