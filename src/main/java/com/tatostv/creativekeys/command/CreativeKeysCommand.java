@@ -153,14 +153,13 @@ public class CreativeKeysCommand {
                                             long now = sp.serverLevel().getGameTime();
                                             long expires = sp.getPersistentData().getLong(CreativeKeyItem.NBT_EXPIRES);
                                             long newExpires = Math.max(0L, expires - delta);
+                                            
                                             if (expires > now && newExpires <= now) {
-                                                // expire immediately
-                                                sp.getPersistentData().remove(CreativeKeyItem.NBT_EXPIRES);
-                                                sp.getPersistentData().remove(CreativeKeyItem.NBT_PREV_GAMEMODE);
-                                                sp.setGameMode(GameType.SURVIVAL);
-                                                NetworkMessages.sendExpires(sp, 0L);
-                                                sp.sendSystemMessage(Component.literal("Creative expired."));
+                                                // Timer will expire - use the centralized expiration method
+                                                CreativeKeyItem.expireCreativeMode(sp);
+                                                sp.sendSystemMessage(Component.literal("Creative expired due to time reduction."));
                                             } else if (expires > now) {
+                                                // Timer is still active after subtraction
                                                 sp.getPersistentData().putLong(CreativeKeyItem.NBT_EXPIRES, newExpires);
                                                 NetworkMessages.sendExpires(sp, newExpires);
                                                 sp.sendSystemMessage(Component.literal(
@@ -173,6 +172,19 @@ public class CreativeKeysCommand {
                                     }
                                     return 1;
                                 }))));
+
+        // /creativekeys clearinventory <targets>
+        root.then(Commands.literal("clearinventory")
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .executes(ctx -> {
+                            Collection<ServerPlayer> targets = EntityArgument.getPlayers(ctx, "targets");
+                            for (ServerPlayer sp : targets) {
+                                CreativeKeyItem.clearPlayerInventory(sp);
+                                sp.sendSystemMessage(Component.literal("Your inventory has been cleared."));
+                            }
+                            ctx.getSource().sendSuccess(() -> Component.literal("Cleared inventory for " + targets.size() + " player(s)."), true);
+                            return 1;
+                        })));
 
         dispatcher.register(root);
     }

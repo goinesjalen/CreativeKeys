@@ -128,4 +128,63 @@ public class CreativeKeyItem extends Item {
     public boolean isFoil(ItemStack stack) {
         return true;
     }
+
+    /**
+     * Expires the creative mode for a player, clearing their inventory and reverting to survival
+     */
+    public static void expireCreativeMode(ServerPlayer player) {
+        if (player == null) return;
+
+        try {
+            // Clear NBT first to prevent loops
+            player.getPersistentData().remove(NBT_EXPIRES);
+            player.getPersistentData().remove(NBT_PREV_GAMEMODE);
+            
+            // Clear inventory before reverting
+            clearPlayerInventory(player);
+            
+            // Revert to survival
+            player.setGameMode(GameType.SURVIVAL);
+            
+            player.displayClientMessage(
+                    Component.literal("Creative expired. Inventory cleared and returned to Survival.")
+                            .withStyle(ChatFormatting.RED),
+                    true);
+            
+            // Sync to client
+            NetworkMessages.sendExpires(player, 0L);
+        } catch (Exception e) {
+            // Log error but don't crash
+            System.err.println("Error expiring creative mode for " + player.getName().getString() + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Clears all items from the player's inventory, armor, and offhand
+     */
+    public static void clearPlayerInventory(ServerPlayer player) {
+        if (player == null) return;
+
+        try {
+            // Clear main inventory (hotbar + main inventory slots)
+            player.getInventory().clearContent();
+            
+            // Clear armor slots
+            for (int i = 0; i < player.getInventory().armor.size(); i++) {
+                player.getInventory().armor.set(i, ItemStack.EMPTY);
+            }
+            
+            // Clear offhand
+            for (int i = 0; i < player.getInventory().offhand.size(); i++) {
+                player.getInventory().offhand.set(i, ItemStack.EMPTY);
+            }
+            
+            // Sync inventory to client
+            player.inventoryMenu.broadcastChanges();
+            
+        } catch (Exception e) {
+            // Log error but don't crash
+            System.err.println("Failed to clear inventory for " + player.getName().getString() + ": " + e.getMessage());
+        }
+    }
 }

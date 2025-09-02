@@ -28,25 +28,22 @@ public class CreativeKeysEvents {
             long expires = sp.getPersistentData().getLong(CreativeKeyItem.NBT_EXPIRES);
 
             if (expires > 0 && now >= expires) {
-                // Clear NBT first to prevent infinite loops
-                sp.getPersistentData().remove(CreativeKeyItem.NBT_EXPIRES);
-                
-                // Revert to survival (simple and safe)
-                sp.setGameMode(GameType.SURVIVAL);
-                
-                sp.displayClientMessage(
-                        Component.literal("Creative expired. Returning to Survival.")
-                                .withStyle(ChatFormatting.RED),
-                        true);
-                
-                // Sync to client
-                NetworkMessages.sendExpires(sp, 0L);
+                // Use the centralized expiration method
+                CreativeKeyItem.expireCreativeMode(sp);
             }
         } catch (Exception e) {
             // Log error but don't crash the server
             CreativeKeys.LOGGER.error("Error in Creative Keys player tick for {}: {}", 
                 sp.getName().getString(), e.getMessage());
         }
+    }
+
+    /**
+     * Clears all items from the player's inventory, armor, and offhand
+     */
+    private static void clearPlayerInventory(ServerPlayer player) {
+        // Delegate to the item class method
+        CreativeKeyItem.clearPlayerInventory(player);
     }
 
     @SubscribeEvent
