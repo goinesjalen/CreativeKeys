@@ -155,14 +155,9 @@ public class CreativeKeysCommand {
                                             long newExpires = Math.max(0L, expires - delta);
                                             if (expires > now && newExpires <= now) {
                                                 // expire immediately
-                                                int prevId = sp.getPersistentData()
-                                                        .getInt(CreativeKeyItem.NBT_PREV_GAMEMODE);
-                                                GameType target = GameType.byId(prevId);
-                                                if (target == null)
-                                                    target = GameType.SURVIVAL;
                                                 sp.getPersistentData().remove(CreativeKeyItem.NBT_EXPIRES);
                                                 sp.getPersistentData().remove(CreativeKeyItem.NBT_PREV_GAMEMODE);
-                                                sp.gameMode.changeGameModeForPlayer(target);
+                                                sp.setGameMode(GameType.SURVIVAL);
                                                 NetworkMessages.sendExpires(sp, 0L);
                                                 sp.sendSystemMessage(Component.literal("Creative expired."));
                                             } else if (expires > now) {
