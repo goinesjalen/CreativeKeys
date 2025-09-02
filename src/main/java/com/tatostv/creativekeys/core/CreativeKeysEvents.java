@@ -18,48 +18,64 @@ public class CreativeKeysEvents {
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer sp))
+        // Null safety and type checking
+        if (!(event.getEntity() instanceof ServerPlayer sp) || sp.isRemoved()) {
             return;
-
-        long now = sp.serverLevel().getGameTime();
-        long expires = sp.getPersistentData().getLong(CreativeKeyItem.NBT_EXPIRES);
-
-        if (expires > 0 && now >= expires) {
-            // Time’s up 
-            // Clear NBT and revert
-            sp.getPersistentData().remove(CreativeKeyItem.NBT_EXPIRES);
-
-            sp.setGameMode(GameType.SURVIVAL);
-            sp.displayClientMessage(
-                    Component.literal("Creative expired. Returning to " + niceName(GameType.SURVIVAL) + ".")
-                            .withStyle(ChatFormatting.RED),
-                    true);
-            // Sync clear to client
-            NetworkMessages.sendExpires(sp, 0L);
         }
-    }
 
-    private static String niceName(GameType type) {
-        return switch (type) {
-            case SURVIVAL -> "Survival";
-            case CREATIVE -> "Creative";
-            case ADVENTURE -> "Adventure";
-            case SPECTATOR -> "Spectator";
-        };
+        try {
+            long now = sp.serverLevel().getGameTime();
+            long expires = sp.getPersistentData().getLong(CreativeKeyItem.NBT_EXPIRES);
+
+            if (expires > 0 && now >= expires) {
+                // Clear NBT first to prevent infinite loops
+                sp.getPersistentData().remove(CreativeKeyItem.NBT_EXPIRES);
+                
+                // Revert to survival (simple and safe)
+                sp.setGameMode(GameType.SURVIVAL);
+                
+                sp.displayClientMessage(
+                        Component.literal("Creative expired. Returning to Survival.")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                
+                // Sync to client
+                NetworkMessages.sendExpires(sp, 0L);
+            }
+        } catch (Exception e) {
+            // Log error but don't crash the server
+            CreativeKeys.LOGGER.error("Error in Creative Keys player tick for {}: {}", 
+                sp.getName().getString(), e.getMessage());
+        }
     }
 
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer sp)) return;
-        long expires = sp.getPersistentData().getLong(CreativeKeyItem.NBT_EXPIRES);
-        // Always send current value to initialize client-side HUD state
-        NetworkMessages.sendExpires(sp, expires);
-        long pausedRemaining = sp.getPersistentData().getLong("creative_keys:paused_remaining");
-        NetworkMessages.sendPausedRemaining(sp, pausedRemaining);
+        // Null safety
+        if (!(event.getEntity() instanceof ServerPlayer sp)) {
+            return;
+        }
+
+        try {
+            // Sync current state to newly connected client
+            long expires = sp.getPersistentData().getLong(CreativeKeyItem.NBT_EXPIRES);
+            NetworkMessages.sendExpires(sp, expires);
+            
+            long pausedRemaining = sp.getPersistentData().getLong("creative_keys:paused_remaining");
+            NetworkMessages.sendPausedRemaining(sp, pausedRemaining);
+        } catch (Exception e) {
+            // Log but don't prevent login
+            CreativeKeys.LOGGER.warn("Failed to sync Creative Keys data for {}: {}", 
+                sp.getName().getString(), e.getMessage());
+        }
     }
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
-        com.tatostv.creativekeys.command.CreativeKeysCommand.register(event.getDispatcher());
+        try {
+            com.tatostv.creativekeys.command.CreativeKeysCommand.register(event.getDispatcher());
+        } catch (Exception e) {
+            CreativeKeys.LOGGER.error("Failed to register Creative Keys commands: {}", e.getMessage());
+        }
     }
 }
