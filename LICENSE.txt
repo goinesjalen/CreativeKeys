@@ -19,3 +19,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Additional Terms:
+- This software is provided for educational and entertainment purposes.
+- The author is not responsible for any server issues, data loss, or other
+  problems that may arise from the use of this modification.
+- Users are responsible for backing up their world data before installation.
+- This mod is designed to be compatible with NeoForge and Minecraft, but
+  compatibility with future versions is not guaranteed.
+- The mod may collect minimal non-personal data (such as error logs) for
+  debugging purposes only. No personal information is transmitted or stored.
+
+Minecraft® is a trademark of Mojang Studios. This project is not affiliated
+with or endorsed by Mojang Studios or Microsoft Corporation.
