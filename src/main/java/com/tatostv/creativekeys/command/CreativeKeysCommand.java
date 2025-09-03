@@ -1,9 +1,11 @@
 package com.tatostv.creativekeys.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.tatostv.creativekeys.CreativeKeys;
+import com.tatostv.creativekeys.ModConfigs;
 import com.tatostv.creativekeys.item.CreativeKeyItem;
 import com.tatostv.creativekeys.network.NetworkMessages;
 import net.minecraft.commands.CommandSourceStack;
@@ -172,19 +174,32 @@ public class CreativeKeysCommand {
                                     }
                                     return 1;
                                 }))));
-
-        // /creativekeys clearinventory <targets>
-        root.then(Commands.literal("clearinventory")
-                .then(Commands.argument("targets", EntityArgument.players())
+        // /creativekeys clearInventory <true|false> - Toggle auto inventory clearing
+        root.then(Commands.literal("clearInventory")
+                .then(Commands.argument("enabled", BoolArgumentType.bool())
                         .executes(ctx -> {
-                            Collection<ServerPlayer> targets = EntityArgument.getPlayers(ctx, "targets");
-                            for (ServerPlayer sp : targets) {
-                                CreativeKeyItem.clearPlayerInventory(sp);
-                                sp.sendSystemMessage(Component.literal("Your inventory has been cleared."));
-                            }
-                            ctx.getSource().sendSuccess(() -> Component.literal("Cleared inventory for " + targets.size() + " player(s)."), true);
+                            boolean enabled = BoolArgumentType.getBool(ctx, "enabled");
+                            
+                            // Update the config value
+                            ModConfigs.CLEAR_INVENTORY_ON_EXPIRE.set(enabled);
+                            
+                            String status = enabled ? "enabled" : "disabled";
+                            String message = "Inventory clearing on Creative expiration is now " + status + ".";
+                            
+                            ctx.getSource().sendSuccess(() -> Component.literal(message), true);
                             return 1;
                         })));
+
+        // /creativekeys status - Show current config status
+        root.then(Commands.literal("status")
+                .executes(ctx -> {
+                    boolean clearInventoryEnabled = ModConfigs.CLEAR_INVENTORY_ON_EXPIRE.get();
+                    String status = clearInventoryEnabled ? "ENABLED" : "DISABLED";
+                    String message = "Clear inventory on expiration: " + status;
+                    
+                    ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+                    return 1;
+                }));
 
         dispatcher.register(root);
     }

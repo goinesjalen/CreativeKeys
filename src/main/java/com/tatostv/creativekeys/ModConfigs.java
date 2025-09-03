@@ -11,8 +11,16 @@ public class ModConfigs {
     // Central builder for defining configuration options
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    // Currently no config options are needed for this simple mod
-    // Future options can be added here as needed
+    // Whether to clear inventory when Creative mode expires
+    public static final ModConfigSpec.BooleanValue CLEAR_INVENTORY_ON_EXPIRE;
+
+    static {
+        BUILDER.comment("Creative Keys Configuration");
+        
+        CLEAR_INVENTORY_ON_EXPIRE = BUILDER
+            .comment("Whether to clear player inventory when Creative mode expires")
+            .define("clearInventoryOnExpire", true);
+    }
     
     // Final built config specification (registered in CreativeKeys.java)
     static final ModConfigSpec SPEC = BUILDER.build();

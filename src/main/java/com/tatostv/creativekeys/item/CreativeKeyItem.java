@@ -1,5 +1,6 @@
 package com.tatostv.creativekeys.item;
 
+import com.tatostv.creativekeys.ModConfigs;
 import com.tatostv.creativekeys.network.NetworkMessages;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -130,7 +131,7 @@ public class CreativeKeyItem extends Item {
     }
 
     /**
-     * Expires the creative mode for a player, clearing their inventory and reverting to survival
+     * Expires the creative mode for a player, optionally clearing their inventory based on config
      */
     public static void expireCreativeMode(ServerPlayer player) {
         if (player == null) return;
@@ -140,16 +141,24 @@ public class CreativeKeyItem extends Item {
             player.getPersistentData().remove(NBT_EXPIRES);
             player.getPersistentData().remove(NBT_PREV_GAMEMODE);
             
-            // Clear inventory before reverting
-            clearPlayerInventory(player);
+            // Check config before clearing inventory
+            boolean shouldClearInventory = ModConfigs.CLEAR_INVENTORY_ON_EXPIRE.get();
+            
+            if (shouldClearInventory) {
+                clearPlayerInventory(player);
+                player.displayClientMessage(
+                        Component.literal("Creative expired. Inventory cleared and returned to Survival.")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+            } else {
+                player.displayClientMessage(
+                        Component.literal("Creative expired. Returned to Survival.")
+                                .withStyle(ChatFormatting.YELLOW),
+                        true);
+            }
             
             // Revert to survival
             player.setGameMode(GameType.SURVIVAL);
-            
-            player.displayClientMessage(
-                    Component.literal("Creative expired. Inventory cleared and returned to Survival.")
-                            .withStyle(ChatFormatting.RED),
-                    true);
             
             // Sync to client
             NetworkMessages.sendExpires(player, 0L);
